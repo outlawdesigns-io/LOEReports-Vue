@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 import autobahn from 'autobahn-browser';
+import CommonMethods from './CommonMethods';
 
 const wampConn = new autobahn.Connection({
   url:'wss://api.outlawdesigns.io:9700/ws',
@@ -7,6 +8,7 @@ const wampConn = new autobahn.Connection({
 });
 wampConn.onopen = (session) => {
   console.log('connected to wamp router!');
+  session.subscribe('io.outlawdesigns.loe.song.played',(args) => CommonMethods.newPlayedSongHandler(args,store));
   // session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',['mtd']).then(console.log);
 }
 
@@ -34,7 +36,7 @@ const actions = {
         commit('addPlayedSong',s);
       });
     }).catch((err)=>{
-      console.log('wamp error caught...');
+      console.log('wamp error caught...', err);
     });
   },
   getUnplayedSongs({commit}){
@@ -45,7 +47,7 @@ const actions = {
       });
     }).catch((err)=>{
       //how to bubble up to component?
-      console.log('wamp error caught...');
+      console.log('wamp error caught...', err);
     });
   },
   getPlaysAndAdditions({commit},period){
@@ -55,8 +57,7 @@ const actions = {
         commit('addPlaysAndAdditions',e);
       });
     }).catch((err)=>{
-      console.log(err);
-      console.log('wamp error caught...');
+      console.log('wamp error caught...', err);
     });
   },
   getStatsByColumn({commit},payload){
@@ -66,8 +67,7 @@ const actions = {
         commit('addStatsByColumn',e);
       });
     }).catch((err)=>{
-      console.log(err);
-      console.log('store error caught...');
+      console.log('store error caught...', err);
     });
   },
   getFirstTimePlays({commit},period){
@@ -76,7 +76,7 @@ const actions = {
         commit('setFirstTimePlays',e);
       });
     }).catch((err)=>{
-      console.log('store error caught...');
+      console.log('store error caught...', err);
     });
   }
 };
@@ -108,8 +108,15 @@ const mutations = {
   },
   setFirstTimePlays(state,payload){
     state.firstTimeAndAll = [];
-    console.log(payload);
     state.firstTimeAndAll.push(payload);
+  },
+  updateSongLists(state,payload){
+    let playedObj = payload[0];
+    let songObj = payload[1];
+    state.unplayedSongs.splice(state.unplayedSongs.findIndex( e => e.UID == playedObj.songId),1);
+    state.playedSongs.push({
+      //mapping...
+    });
   }
 };
 
