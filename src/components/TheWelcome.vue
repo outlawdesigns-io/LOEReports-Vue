@@ -1,7 +1,7 @@
 <script setup>
 
 import { useStore } from 'vuex';
-import { ref,computed } from 'vue';
+import { ref,computed,watch } from 'vue';
 import {
   Chart as ChartJS,
   Title,
@@ -100,7 +100,7 @@ const metalFormulas = ref([
   // }
 ]);
 
-const selectedTimeFrame = ref('qtd');
+const selectedTimeFrame = ref('wtd');
 // const selectedMetalFormula = ref('AD');
 const selectedMetalFormula = ref(/^$|(?!)/);
 
@@ -115,11 +115,16 @@ const resetGraphs = () => {
   // store.dispatch('getFirstTimePlays',[selectedTimeFrame.value]);
 }
 const init = () => {
+  store.dispatch('subscribeToPlayedSongs');
   store.dispatch('getPlayedSongs',selectedTimeFrame.value);
   store.dispatch('getPlaysAndAdditions',[selectedTimeFrame.value]);
   store.dispatch('getUnplayedSongs');
 }
 
+/*
+probably a more appropriate way to do this,
+like a component event we can bind to or something
+*/
 try{
   init();
 }catch(err){

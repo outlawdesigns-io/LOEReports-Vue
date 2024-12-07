@@ -47,7 +47,7 @@ const data = computed(()=>{
         backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
         data: [
           store.state.playedSongs.reduce((acc, e)=>{
-            return e.play_count == 1 ? ++acc:acc;
+            return e.isFirstTimePlay == 1 ? ++acc:acc;
           },0),
           null
         ]

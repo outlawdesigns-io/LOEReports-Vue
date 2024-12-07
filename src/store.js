@@ -8,7 +8,6 @@ const wampConn = new autobahn.Connection({
 });
 wampConn.onopen = (session) => {
   console.log('connected to wamp router!');
-  session.subscribe('io.outlawdesigns.loe.song.played',(args) => CommonMethods.newPlayedSongHandler(args,store));
   // session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',['mtd']).then(console.log);
 }
 
@@ -28,6 +27,11 @@ const state = {
 };
 
 const actions = {
+  subscribeToPlayedSongs({commit}){
+    wampConn.session.subscribe('io.outlawdesigns.loe.song.played',(args)=>{
+      commit('updateSongLists',args);
+    });
+  },
   getPlayedSongs({commit},period){
     commit('clearPlayedSongs');
     wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_ToDate',[period]).then((queryResponse)=>{
@@ -113,10 +117,22 @@ const mutations = {
   updateSongLists(state,payload){
     let playedObj = payload[0];
     let songObj = payload[1];
-    state.unplayedSongs.splice(state.unplayedSongs.findIndex( e => e.UID == playedObj.songId),1);
-    state.playedSongs.push({
-      //mapping...
+    let removalIndex = state.unplayedSongs.findIndex( e => e.UID == playedObj.songId);
+    state.unplayedSongs.splice(removalIndex,1);
+    state.playedSongs.unshift({
+      title:songObj.title,
+      track_number:songObj.track_number,
+      album:songObj.album,
+      artist:songObj.artist,
+      genre:songObj.genre,
+      publisher:songObj.publisher,
+      year:songObj.year,
+      artist_country:songObj.artist_country,
+      daysInLibrary:CommonMethods.daysInLibrary(playedObj.playDate,songObj.created_date),
+      cover_path:songObj.cover_path,
+      isFirstTimePlay: removalIndex == -1 ? 0:1
     });
+    state.playsAndAdditions[state.playsAndAdditions.length - 1].play_events++;
   }
 };
 
