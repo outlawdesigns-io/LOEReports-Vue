@@ -164,8 +164,8 @@ resetTable();
         <tr>
           <td v-for="column in columns" :key="column.key">
             <template v-if="column.key === 'cover_path'">
-              static text
-              <!-- <img :height="50" :width="50" :src="buildCoverPathUrl(props.item[column.key])" alt='cover_path' @click="toggleCoverDialog(props.item[column.key],true)" /> -->
+              <!-- static text -->
+              <img :height="50" :width="50" :src="buildCoverPathUrl(props.item[column.key])" alt='cover_path' @click="toggleCoverDialog(props.item[column.key],true)" />
             </template>
             <template v-else>
               {{ props.item[column.key] }}
