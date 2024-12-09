@@ -40,7 +40,7 @@ const options = ref(
 
 const data = computed(()=>{
   return {
-    labels: ['First Time Plays', 'All Plays' ],
+    labels: ['First Time Plays', 'Replays' ],
     datasets: [
       {
         label:'First Time Plays',
@@ -53,11 +53,13 @@ const data = computed(()=>{
         ]
       },
       {
-        label:'All Plays',
+        label:'Replays',
         backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
         data: [
           null,
-          store.state.playedSongs.length,
+          store.state.playedSongs.reduce((acc,e) => {
+            return e.isFirstTimePlay == 0 ? ++acc:acc;
+          },0),
         ]
       }
     ]
