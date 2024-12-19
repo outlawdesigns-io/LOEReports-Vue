@@ -46,9 +46,7 @@ const data = computed(()=>{
         label:'First Time Plays',
         backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
         data: [
-          store.state.playedSongs.reduce((acc, e)=>{
-            return e.isFirstTimePlay == 1 ? ++acc:acc;
-          },0),
+          store.state.Song.played.reduce(CommonMethods.reduceFirstTimePlays,0),
           null
         ]
       },
@@ -57,9 +55,7 @@ const data = computed(()=>{
         backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
         data: [
           null,
-          store.state.playedSongs.reduce((acc,e) => {
-            return e.isFirstTimePlay == 0 ? ++acc:acc;
-          },0),
+          store.state.Song.played.reduce(CommonMethods.reduceReplays,0),
         ]
       }
     ]

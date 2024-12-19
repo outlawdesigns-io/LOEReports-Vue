@@ -2,6 +2,7 @@
 
 import { useStore } from 'vuex';
 import { ref,computed,watch } from 'vue';
+import CommonMethods from './../CommonMethods';
 import {
   Chart as ChartJS,
   Title,
@@ -46,12 +47,25 @@ const lineData = computed(()=>{
   };
 });
 
+const replayRatio = computed(()=>{
+  return CommonMethods.reduceRatio(
+    store.state.Song.played.reduce(CommonMethods.reduceReplays,0),
+    store.state.Song.played.reduce(CommonMethods.reduceFirstTimePlays,0)
+  );
+});
+const consumptionRatio = computed(()=>{
+  return CommonMethods.reduceRatio(
+    store.state.playsAndAdditions.reduce((acc,e)=>{ return acc += e.play_events },0),
+    store.state.playsAndAdditions.reduce((acc,e)=>{ return acc += e.new_additions },0)
+  );
+});
+
 const playedSongs = computed(()=>{
-  return store.state.playedSongs;
+  return store.state.Song.played;
 });
 
 const unplayedSongs = computed(()=>{
-  return store.state.unplayedSongs;
+  return store.state.Song.unplayed;
 });
 
 const timeframes = ref([
@@ -84,15 +98,15 @@ const timeframes = ref([
 const metalFormulas = ref([
   {
     label:'All Distinct',
-    value:/^$|(?!)/,
+    value:'/^$|(?!)/',
   },
   {
     label:'Grouped',
-    value:/metal/i,
+    value:'/metal/i',
   },
   {
     label:'Grouped+',
-    value:/metal|core|grind/gi,
+    value:'/metal|core|grind/gi',
   },
   // {
   //   label:'Family Groups',
@@ -101,12 +115,11 @@ const metalFormulas = ref([
 ]);
 
 const selectedTimeFrame = ref('wtd');
-// const selectedMetalFormula = ref('AD');
-const selectedMetalFormula = ref(/^$|(?!)/);
+const selectedMetalFormula = ref(metalFormulas.value[0].value);
 
-function _generateColor(label){
-  return '#' + Math.floor(Math.random()*16777215).toString(16);
-}
+const updateSelectedFormula = (newFormula) => {
+  selectedMetalFormula.value = newFormula;
+};
 
 const resetGraphs = () => {
   store.dispatch('getPlayedSongs',selectedTimeFrame.value);
@@ -163,7 +176,9 @@ try{
           <v-card-text>
             <PlaysAndAdditionsBarChart :timeFrame="selectedTimeFrame" />
           </v-card-text>
-          <v-card-actions></v-card-actions>
+          <v-card-actions>
+            <span style="margin:auto">Consumption Ratio {{consumptionRatio.join(':')}}</span>
+          </v-card-actions>
         </v-card>
       </v-col>
       <v-col cols="12" sm="4">
@@ -181,7 +196,9 @@ try{
           <v-card-text>
             <FirstAndAllBarChart class="bordered" :timeFrame="selectedTimeFrame" />
           </v-card-text>
-          <v-card-actions></v-card-actions>
+          <v-card-actions>
+            <span style="margin:auto">Replay Ratio {{replayRatio.join(':')}}</span>
+          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -208,11 +225,6 @@ try{
       </v-col>
     </v-row>
   </v-container>
-  <!-- <div>
-    <ul>
-      <li v-for="s in storeData">{{s.title}}</li>
-    </ul>
-  </div> -->
 </template>
 
 <style scoped>

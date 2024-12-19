@@ -17,15 +17,16 @@ const props = defineProps({
     required: true,
   },
   metalFormula:{
-    type:RegExp,
+    type:String,
     required:true,
   }
 });
 
 const data  = computed(()=>{
-  let storeData = store.state.playedSongs.reduce((acc,e)=>{
+  let storeData = store.state.Song.played.reduce((acc,e)=>{
     if(column.value === 'genre'){
-      if(e[column.value]?.match(props.metalFormula)){
+      const pattern = new RegExp(props.metalFormula.slice(1, props.metalFormula.lastIndexOf('/')), props.metalFormula.slice(props.metalFormula.lastIndexOf('/') + 1));
+      if(e[column.value]?.match(pattern)){
         acc['Metal'] = (acc['Metal'] || 0) + 1;
       }else{
         acc[e[column.value]] = (acc[e[column.value]] || 0) + 1;

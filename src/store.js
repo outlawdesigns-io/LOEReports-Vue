@@ -1,6 +1,7 @@
 import { createStore } from 'vuex';
 import autobahn from 'autobahn-browser';
 import CommonMethods from './CommonMethods';
+import { RepositoryFactory } from './api/RepositoryFactory';
 
 const wampConn = new autobahn.Connection({
   url:'wss://api.outlawdesigns.io:9700/ws',
@@ -19,10 +20,14 @@ wampConn.onclose = (reason,details) => {
 wampConn.open();
 
 const state = {
-  playedSongs:[],
-  unplayedSongs:[],
+  Song:{
+    libraryTotal:0,
+    played:[],
+    unplayed:[],
+    columnStats:[]
+  },
+  auth_token:'',
   playsAndAdditions:[],
-  statsByColumn:[],
   firstTimeAndAll:[]
 };
 
@@ -87,16 +92,16 @@ const actions = {
 
 const mutations = {
   addPlayedSong(state,s){
-    state.playedSongs.push(s);
+    state.Song.played.push(s);
   },
   clearPlayedSongs(state){
-    state.playedSongs = [];
+    state.Song.played = [];
   },
   addUnplayedSong(state,s){
-    state.unplayedSongs.push(s);
+    state.Song.unplayed.push(s);
   },
   clearUnplayedSongs(state){
-    state.unplayedSongs = [];
+    state.Song.unplayed = [];
   },
   clearPlaysAndAdditions(state){
     state.playsAndAdditions = [];
@@ -105,10 +110,10 @@ const mutations = {
     state.playsAndAdditions.push(payload);
   },
   clearStatsByColumn(state){
-    state.statsByColumn = [];
+    state.Song.columnStats = [];
   },
   addStatsByColumn(state,payload){
-    state.statsByColumn.push(payload);
+    state.Song.columnStats.push(payload);
   },
   setFirstTimePlays(state,payload){
     state.firstTimeAndAll = [];
@@ -117,9 +122,9 @@ const mutations = {
   updateSongLists(state,payload){
     let playedObj = payload[0];
     let songObj = payload[1];
-    let removalIndex = state.unplayedSongs.findIndex( e => e.UID == playedObj.songId);
-    state.unplayedSongs.splice(removalIndex,1);
-    state.playedSongs.unshift({
+    let removalIndex = state.Song.unplayed.findIndex( e => e.UID == playedObj.songId);
+    state.Song.unplayed.splice(removalIndex,1);
+    state.Song.played.unshift({
       title:songObj.title,
       track_number:songObj.track_number,
       album:songObj.album,
