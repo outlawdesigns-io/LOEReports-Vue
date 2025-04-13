@@ -21,76 +21,84 @@ wampConn.open();
 
 const state = {
   Song:{
-    libraryTotal:0,
+    songs:[],
     played:[],
     unplayed:[],
-    columnStats:[]
+    libraryConsumptionData:{
+      percent_consumed:0,
+      played:0,
+      total:0
+    }
   },
   auth_token:'',
-  playsAndAdditions:[],
-  firstTimeAndAll:[]
+  playsAndAdditions:[]
 };
 
 const actions = {
   subscribeToPlayedSongs({commit}){
-    wampConn.session.subscribe('io.outlawdesigns.loe.song.played',(args)=>{
+    return wampConn.session.subscribe('io.outlawdesigns.loe.song.played',(args)=>{
       commit('updateSongLists',args);
+    }).catch((err)=>{
+      return Promise.reject(err);
     });
   },
   getPlayedSongs({commit},period){
     commit('clearPlayedSongs');
-    wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_ToDate',[period]).then((queryResponse)=>{
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_ToDate',[period]).then((queryResponse)=>{
       //apply some error checking about wamp response (maybe not registered) or sql query
       queryResponse[0].map((s)=>{
         commit('addPlayedSong',s);
       });
     }).catch((err)=>{
-      console.log('wamp error caught...', err);
+      return Promise.reject(err);
     });
   },
   getUnplayedSongs({commit}){
     commit('clearUnplayedSongs');
-    wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_Unplayed').then((queryResponse)=>{
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_Unplayed').then((queryResponse)=>{
       queryResponse[0].map((s)=>{
         commit('addUnplayedSong',s);
       });
     }).catch((err)=>{
-      //how to bubble up to component?
-      console.log('wamp error caught...', err);
+      return Promise.reject(err);
     });
   },
-  getPlaysAndAdditions({commit},period){
-    wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',[period]).then((queryResponse)=>{
+  getSongs({commit},period){
+    commit('clearSongs');
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_Song_ToDate',[period]).then((queryResponse)=>{
+      queryResponse[0].map((s)=>{
+        commit('addSong', s);
+      });
+    }).catch((err)=>{
+      return Promise.reject(err);
+    });
+  },
+  getSongPlaysAndAdditions({commit},period){
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',[period]).then((queryResponse)=>{
       commit('clearPlaysAndAdditions');
       queryResponse[0].map((e)=>{
         commit('addPlaysAndAdditions',e);
       });
     }).catch((err)=>{
-      console.log('wamp error caught...', err);
+      return Promise.reject(err);
     });
   },
-  getStatsByColumn({commit},payload){
-    wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_StatsByColumnToDate',payload).then((queryResponse)=>{
-      commit('clearStatsByColumn');
-      queryResponse[0].map((e)=>{
-        commit('addStatsByColumn',e);
-      });
+  getLibraryConsumptionData({commit},period){
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlaySong_LibraryConsumedToDate',[period]).then((queryResponse)=>{
+      commit('setLibraryConsumptionData',queryResponse[0][0]);
     }).catch((err)=>{
-      console.log('store error caught...', err);
-    });
-  },
-  getFirstTimePlays({commit},period){
-    wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_FirstTimeAndAllToDate',[period]).then((queryResponse)=>{
-      queryResponse[0].map((e)=>{
-        commit('setFirstTimePlays',e);
-      });
-    }).catch((err)=>{
-      console.log('store error caught...', err);
+      return Promise.reject(err);
     });
   }
 };
 
 const mutations = {
+  addSong(state,s){
+    state.Song.songs.push(s);
+  },
+  clearSongs(state){
+    state.Song.songs = [];
+  },
   addPlayedSong(state,s){
     state.Song.played.push(s);
   },
@@ -108,16 +116,6 @@ const mutations = {
   },
   addPlaysAndAdditions(state,payload){
     state.playsAndAdditions.push(payload);
-  },
-  clearStatsByColumn(state){
-    state.Song.columnStats = [];
-  },
-  addStatsByColumn(state,payload){
-    state.Song.columnStats.push(payload);
-  },
-  setFirstTimePlays(state,payload){
-    state.firstTimeAndAll = [];
-    state.firstTimeAndAll.push(payload);
   },
   updateSongLists(state,payload){
     let playedObj = payload[0];
@@ -138,6 +136,16 @@ const mutations = {
       isFirstTimePlay: removalIndex == -1 ? 0:1
     });
     state.playsAndAdditions[state.playsAndAdditions.length - 1].play_events++;
+    state.Song.libraryConsumptionData.played++;
+    let newPercent = ((state.Song.libraryConsumptionData.played / state.Song.libraryConsumptionData.total) * 100).toFixed(2);
+    console.log(newPercent);
+    console.log(state.Song.libraryConsumptionData.percent_consumed);
+    state.Song.libraryConsumptionData.percent_consumed = (newPercent == state.Song.libraryConsumptionData.percent_consumed) ? state.Song.libraryConsumptionData.percent_consumed:newPercent;
+  },
+  setLibraryConsumptionData(state,payload){
+    state.Song.libraryConsumptionData.total = parseInt(payload.total) || 0;
+    state.Song.libraryConsumptionData.played = parseInt(payload.played) || 0;
+    state.Song.libraryConsumptionData.percent_consumed = parseFloat(payload.percent_consumed) || 0;
   }
 };
 

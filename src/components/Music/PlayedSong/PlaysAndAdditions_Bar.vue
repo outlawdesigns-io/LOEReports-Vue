@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
-import CommonMethods from '../../CommonMethods';
+import CommonMethods from '../../../CommonMethods';
 import {
   Chart as ChartJS,
   Title,

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
-import CommonMethods from '../../CommonMethods';
+import CommonMethods from '../../../CommonMethods';
 import {
   Chart as ChartJS,
   Title,
@@ -39,23 +39,24 @@ const options = ref(
 );
 
 const data = computed(()=>{
+  let colors = [CommonMethods.generateColor(),CommonMethods.generateColor()];
   return {
-    labels: ['First Time Plays', 'Replays' ],
+    labels: ['Replays', 'First Time Plays'],
     datasets: [
       {
-        label:'First Time Plays',
-        backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
+        label:'Replays',
+        backgroundColor:colors[0],
         data: [
-          store.state.Song.played.reduce(CommonMethods.reduceFirstTimePlays,0),
+          store.state.Song.played.reduce(CommonMethods.reduceReplays,0),
           null
         ]
       },
       {
-        label:'Replays',
-        backgroundColor:[CommonMethods.generateColor(),CommonMethods.generateColor()],
+        label:'First Time Plays',
+        backgroundColor:colors[1],
         data: [
           null,
-          store.state.Song.played.reduce(CommonMethods.reduceReplays,0),
+          store.state.Song.played.reduce(CommonMethods.reduceFirstTimePlays,0)
         ]
       }
     ]

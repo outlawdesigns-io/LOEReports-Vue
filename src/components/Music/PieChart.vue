@@ -12,8 +12,12 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale);
 const store = useStore();
 
 const props = defineProps({
-  timeFrame: {
-    type: String,
+  // timeFrame: {
+  //   type: String,
+  //   required: true,
+  // },
+  items: {
+    type: Array,
     required: true,
   },
   metalFormula:{
@@ -23,7 +27,7 @@ const props = defineProps({
 });
 
 const data  = computed(()=>{
-  let storeData = store.state.Song.played.reduce((acc,e)=>{
+  let storeData = props.items.reduce((acc,e)=>{
     if(column.value === 'genre'){
       const pattern = new RegExp(props.metalFormula.slice(1, props.metalFormula.lastIndexOf('/')), props.metalFormula.slice(props.metalFormula.lastIndexOf('/') + 1));
       if(e[column.value]?.match(pattern)){
@@ -51,15 +55,9 @@ const options = ref(
   {responsive:true, maintainAspectRatio:false}
 );
 
-const update = (event) => {
-  store.dispatch('getStatsByColumn',[props.timeFrame,column.value]);
-}
 
-const tiedPairs = ref({
-  artist_country:'publisher',
-  publisher:'genre',
-  genre:'artist',
-  artist:'album',
+const columns = computed(()=>{
+  return props.items.length > 0 && typeof props.items[0] === 'object' ? Object.keys(props.items[0]).reduce((acc,e)=>{acc.push({key:e,title:e}); return acc},[]) : [];
 });
 
 const column = ref('genre');
@@ -69,7 +67,7 @@ const column = ref('genre');
 
 <template>
   <div>
-    <v-select v-model="column" :items="Object.keys(tiedPairs)" @update:modelValue="update"></v-select>
+    <v-select v-model="column" :items="columns"></v-select>
     <Pie :data="data" />
   </div>
 </template>

@@ -20,18 +20,22 @@ const distinctValues = ref([]);
 const inspectionPath = ref(null);
 const searchStr = ref(null);
 
-const columns = ref([
-  {key:'title', title: 'Title'},
-  {key:'track_number', title:'Track #'},
-  {key:'album', title: 'Album'},
-  {key:'artist', title: 'Artist'},
-  {key:'genre', title: 'Genre'},
-  {key:'publisher', title:'Record Label'},
-  {key:'year', title: 'year'},
-  {key:'artist_country', title: 'Country'},
-  {key:'daysInLibrary', title: 'Days In Library'},
-  {key:'cover_path', title: 'Album art'}
-]);
+/*
+update sp's to give pretty names
+if key exists, first_time_play, activate highlight logic
+if key exists, file_path, activate path validation logic?
+//some pre-defined hidden keys
+UID,
+Length,
+cover_path,
+file_path,
+isFirstTimePlay,
+
+*/
+
+const columns = computed(()=>{
+  return props.items.length > 0 && typeof props.items[0] === 'object' ? Object.keys(props.items[0]).reduce((acc,e)=>{acc.push({key:e,title:e}); return acc},[]) : [];
+});
 
 
 const openFilterDialog = () => {
@@ -164,8 +168,8 @@ resetTable();
         <tr>
           <td v-for="column in columns" :key="column.key">
             <template v-if="column.key === 'cover_path'">
-              static text
-              <!-- <img :height="50" :width="50" :src="buildCoverPathUrl(props.item[column.key])" alt='cover_path' @click="toggleCoverDialog(props.item[column.key],true)" /> -->
+              <!-- static text -->
+              <img :height="50" :width="50" :src="buildCoverPathUrl(props.item[column.key])" alt='cover_path' @click="toggleCoverDialog(props.item[column.key],true)" />
             </template>
             <template v-else>
               {{ props.item[column.key] }}

@@ -14,8 +14,8 @@ const drawer = ref(null);
         <v-list-item title="Home" value="home" to="/"></v-list-item>
         <v-list-item title="Music">
           <v-list density="compact" nav>
-            <v-list-item title="Library" value="Song"></v-list-item>
-            <v-list-item title="Played" value="PlayedSong"></v-list-item>
+            <v-list-item title="Library" value="Song" to="/music"></v-list-item>
+            <v-list-item title="Played" value="PlayedSong" to="/music/played"></v-list-item>
           </v-list>
         </v-list-item>
       </v-list>
