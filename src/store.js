@@ -4,8 +4,8 @@ import CommonMethods from './CommonMethods';
 import { RepositoryFactory } from './api/RepositoryFactory';
 
 const wampConn = new autobahn.Connection({
-  url:'wss://api.outlawdesigns.io:9700/ws',
-  realm:'realm1'
+  url:'wss://wamprouter.example.com/ws',
+  realm:'anonymous'
 });
 wampConn.onopen = (session) => {
   console.log('connected to wamp router!');
@@ -24,13 +24,13 @@ const state = {
     songs:[],
     played:[],
     unplayed:[],
+    rated:[],
     libraryConsumptionData:{
       percent_consumed:0,
       played:0,
       total:0
     }
   },
-  auth_token:'',
   playsAndAdditions:[]
 };
 
@@ -42,16 +42,21 @@ const actions = {
       return Promise.reject(err);
     });
   },
-  getPlayedSongs({commit},period){
+  getSongs({commit},payload){
+    commit('clearSongs');
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_Song_ToDate',[payload.startDate,payload.endDate]).then((queryResponse)=>{
+      queryResponse[0].map((s)=>{
+        commit('addSong',s);
+      });
+    }).catch(err => Promise.reject(err));
+  },
+  getPlayedSongs({commit},payload){
     commit('clearPlayedSongs');
-    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_ToDate',[period]).then((queryResponse)=>{
-      //apply some error checking about wamp response (maybe not registered) or sql query
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_ToDate',[payload.startDate,payload.endDate]).then((queryResponse)=>{
       queryResponse[0].map((s)=>{
         commit('addPlayedSong',s);
       });
-    }).catch((err)=>{
-      return Promise.reject(err);
-    });
+    }).catch(err => Promise.reject(err));
   },
   getUnplayedSongs({commit}){
     commit('clearUnplayedSongs');
@@ -63,18 +68,8 @@ const actions = {
       return Promise.reject(err);
     });
   },
-  getSongs({commit},period){
-    commit('clearSongs');
-    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_Song_ToDate',[period]).then((queryResponse)=>{
-      queryResponse[0].map((s)=>{
-        commit('addSong', s);
-      });
-    }).catch((err)=>{
-      return Promise.reject(err);
-    });
-  },
-  getSongPlaysAndAdditions({commit},period){
-    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',[period]).then((queryResponse)=>{
+  getSongPlaysAndAdditions({commit},payload){
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlayedSong_PlaysAndAdditionsToDate',[payload.startDate,payload.endDate]).then((queryResponse)=>{
       commit('clearPlaysAndAdditions');
       queryResponse[0].map((e)=>{
         commit('addPlaysAndAdditions',e);
@@ -83,12 +78,18 @@ const actions = {
       return Promise.reject(err);
     });
   },
-  getLibraryConsumptionData({commit},period){
-    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlaySong_LibraryConsumedToDate',[period]).then((queryResponse)=>{
+  getLibraryConsumptionData({commit},payload){
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_PlaySong_LibraryConsumedToDate',[payload.startDate,payload.endDate]).then((queryResponse)=>{
       commit('setLibraryConsumptionData',queryResponse[0][0]);
-    }).catch((err)=>{
-      return Promise.reject(err);
-    });
+    }).catch(err => Promise.reject(err));
+  },
+  getSongRatings({commit}, payload){
+    return wampConn.session.call('io.outlawdesigns.loe.music.rpt_RatedSong_ToDate',[payload.startDate, payload.endDate]).then((queryResponse)=>{
+      commit('clearRatedSongs');
+      queryResponse[0].map((s)=>{
+        commit('addRatedSong',s);
+      });
+    }).catch(err => Promise.reject(err));
   }
 };
 
@@ -116,6 +117,12 @@ const mutations = {
   },
   addPlaysAndAdditions(state,payload){
     state.playsAndAdditions.push(payload);
+  },
+  addRatedSong(state,s){
+    state.Song.rated.push(s);
+  },
+  clearRatedSongs(state){
+    state.Song.rated = [];
   },
   updateSongLists(state,payload){
     let playedObj = payload[0];

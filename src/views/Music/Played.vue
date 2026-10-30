@@ -19,6 +19,7 @@ import PieChart from '../../components/Music/PieChart.vue';
 import SongTable from '../../components//Music/SongTable.vue';
 import FirstAndReplayBarChart from '../../components/Music/PlayedSong/FirstAndReplayBarChart.vue';
 import PlaysAndAdditionsBarChart from '../../components/Music/PlayedSong/PlaysAndAdditions_Bar.vue';
+import DateSlider from '../../components/DateSlider.vue';
 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement);
@@ -111,83 +112,46 @@ const unplayedSongs = computed(()=>{
   return store.state.Song.unplayed;
 });
 
-const timeframes = ref([
-  {
-    label:'All Time',
-    value:'All'
-  },
-  {
-    label:'This Year',
-    value:'ytd'
-  },
-  {
-    label:'This Quarter',
-    value:'qtd'
-  },
-  {
-    label:'This Month',
-    value:'Mtd'
-  },
-  {
-    label:'This Week',
-    value:'wtd'
-  },
-  {
-    label:'Today',
-    value:'td'
-  }
-]);
+const metalFormulas = ref(CommonMethods.Music.MetalFormulas);
 
-const metalFormulas = ref([
-  {
-    label:'All Distinct',
-    value:'/^$|(?!)/',
-  },
-  {
-    label:'Grouped',
-    value:'/metal/i',
-  },
-  {
-    label:'Grouped+',
-    value:'/metal|core|grind/gi',
-  },
-  // {
-  //   label:'Family Groups',
-  //   value:'/./',
-  // }
-]);
-
-const selectedTimeFrame = ref('wtd');
 const selectedMetalFormula = ref(metalFormulas.value[0].value);
+const selectedTimeFrame = ref('wtd');
+const startDate = ref(CommonMethods.firstofWeek());
+const endDate = ref(new Date());
 
 const updateSelectedFormula = (newFormula) => {
   selectedMetalFormula.value = newFormula;
 };
 
-const resetGraphs = async () => {
-  try{
-    await store.dispatch('getSongPlaysAndAdditions',[selectedTimeFrame.value]);
-    await store.dispatch('getLibraryConsumptionData',selectedTimeFrame.value);
-    await store.dispatch('getPlayedSongs',selectedTimeFrame.value);
-  }catch(err){
-    console.log(err);
-    alert("Error caught!!\n" + err.error);
-  }
-  // store.dispatch('getStatsByColumn',[selectedTimeFrame.value,'genre']);
-  // store.dispatch('getFirstTimePlays',[selectedTimeFrame.value]);
-}
 const init = async () => {
+  let payload = {startDate: startDate.value, endDate: endDate.value};
   try{
     await store.dispatch('subscribeToPlayedSongs');
-    await store.dispatch('getPlayedSongs',selectedTimeFrame.value);
-    await store.dispatch('getSongPlaysAndAdditions',[selectedTimeFrame.value]);
+    await store.dispatch('getPlayedSongs',payload);
+    await store.dispatch('getSongPlaysAndAdditions',payload);
     await store.dispatch('getUnplayedSongs');
-    await store.dispatch('getLibraryConsumptionData',selectedTimeFrame.value);
+    await store.dispatch('getLibraryConsumptionData',payload);
   }catch(err){
     console.log(err);
     alert("Error caught!!\n" + err.error);
   }
 }
+const resetGraphs = async (payload) => {
+  if(payload){
+    startDate.value = payload[0];
+    endDate.value = payload[1];
+  }
+  let updateRange = {startDate: startDate.value, endDate: endDate.value};
+  try{
+    console.log(updateRange);
+    await store.dispatch('getSongPlaysAndAdditions',updateRange);
+    await store.dispatch('getLibraryConsumptionData',updateRange);
+    await store.dispatch('getPlayedSongs',updateRange);
+  }catch(err){
+    console.log(err);
+    alert("Error caught!!\n");
+  }
+};
 
 /*
 probably a more appropriate way to do this,
@@ -208,7 +172,7 @@ try{
   <v-container>
     <v-row>
       <v-col cols="12" sm="12">
-        <v-select v-model="selectedTimeFrame" :items="timeframes" item-title="label" item-value="value" label="Time Frame" @update:modelValue="resetGraphs"></v-select>
+        <DateSlider @updateValue="resetGraphs" @updateRange="resetGraphs" />
         <v-select v-model="selectedMetalFormula" :items="metalFormulas" item-title="label" item-value="value" label="Metal Formula" @update:modelValue="resetGraphs"></v-select>
       </v-col>
     </v-row>
@@ -288,7 +252,7 @@ try{
     <v-row>
       <v-col cols="12" sm="12">
         <v-card>
-          <v-card-title>Played Songs</v-card-title>
+          <v-card-title>Played Songs in selected period</v-card-title>
           <v-card-text>
             <SongTable :items="playedSongs" />
           </v-card-text>

@@ -7,7 +7,26 @@ export default{
         acc.milliseconds = (acc.milliseconds ?? 0) + parseInt(e.length);
       }
       return acc;
-    }
+    },
+    MetalFormulas:
+    [
+      {
+        label:'All Distinct',
+        value:'/^$|(?!)/',
+      },
+      {
+        label:'Grouped',
+        value:'/metal/i',
+      },
+      {
+        label:'Grouped+',
+        value:'/metal|core|grind/gi',
+      },
+      // {
+      //   label:'Family Groups',
+      //   value:'/./',
+      // }
+    ],
   },
   daysInLibrary(playedDateStr,createdDateStr){
     const diffInMs = new Date(playedDateStr) - new Date(createdDateStr);
@@ -48,6 +67,46 @@ export default{
       acc[date] = 1;
     }
     return acc;
+  },
+  groupDate(acc,e,dateField){
+    let dateStr = Number.isInteger(e[dateField]) ? e[dateField].toString() : e[dateField];
+    const date = new Date(dateStr).toISOString().split('T')[0];
+    if(acc[date]){
+      acc[date]++
+    }else{
+      acc[date] = 1;
+    }
+    return acc;
+  },
+  getDatesBetween(startDate,endDate){
+    let build = true;
+    let betweenDates = [];
+    startDate.setHours(0,0,0,0);
+    endDate.setHours(0,0,0,0);
+    while(startDate < endDate){
+      startDate.setDate(startDate.getDate() + 1);
+      if(startDate < endDate){
+        betweenDates.push(new Date(startDate.toString()));
+      }
+    }
+    return betweenDates;
+  },
+  firstOfTheQuarter(date = new Date()){
+    const currentMonth = date.getMonth();
+    const quarterStartMonth = Math.floor(currentMonth / 3) * 3;
+    return new Date(date.getFullYear(),quarterStartMonth,1);
+  },
+  firstofTheYear(date = new Date()){
+    return new Date(date.getFullYear(),0,1)
+  },
+  firstofTheMonth(date = new Date()){
+    return new Date(date.getFullYear(),date.getMonth(),1)
+  },
+  firstofWeek(date = new Date()){
+    const firstDayIndex = date.getDay();
+    const firstDayofWeek = new Date(date);
+    firstDayofWeek.setDate(date.getDate() - firstDayIndex);
+    return firstDayofWeek;
   }
   // isSameDay(dateStr1,dateStr2){
   //   const date1 = new Date(dateStr1);

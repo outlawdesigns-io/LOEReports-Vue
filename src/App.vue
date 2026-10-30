@@ -1,9 +1,15 @@
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
+import { useTheme } from 'vuetify';
 import HelloWorld from './components/HelloWorld.vue'
 
 const drawer = ref(null);
+const theme = useTheme();
+
+function toggleTheme() {
+  theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
+}
 
 </script>
 
@@ -16,6 +22,10 @@ const drawer = ref(null);
           <v-list density="compact" nav>
             <v-list-item title="Library" value="Song" to="/music"></v-list-item>
             <v-list-item title="Played" value="PlayedSong" to="/music/played"></v-list-item>
+            <v-list-item title="Ratings" value="RatedSong" to="/music/rating"></v-list-item>
+            <v-list-item>
+              <v-icon @click="toggleTheme">mdi-theme-light-dark</v-icon>
+            </v-list-item>
           </v-list>
         </v-list-item>
       </v-list>

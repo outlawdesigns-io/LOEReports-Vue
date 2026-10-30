@@ -14,13 +14,10 @@ import * as directives from 'vuetify/directives'
 
 const vuetify = createVuetify({
   components,
-  directives
+  directives,
+  theme:{
+    defaultTheme: 'system'
+  }
 });
 
-const app = createApp(App)
-
-app.use(router)
-app.use(store);
-app.use(vuetify);
-
-app.mount('#app')
+const app = createApp(App).use(router).use(vuetify).use(store).mount('#app');

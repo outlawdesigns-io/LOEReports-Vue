@@ -14,9 +14,10 @@ import {
   PointElement,
   LineElement
 } from 'chart.js';
-import { Line } from 'vue-chartjs';
+import { Line, Bar } from 'vue-chartjs';
 import PieChart from '../../components/Music/PieChart.vue';
 import SongTable from '../../components//Music/SongTable.vue';
+import DateSlider from '../../components/DateSlider.vue';
 
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement);
@@ -37,65 +38,51 @@ const lineData = computed(()=>{
     ]
   };
 });
+const yearData = computed(()=>{
+  let graphData = store.state.Song.songs.sort((a,b)=> a.year - b.year).reduce( (acc,e) => CommonMethods.groupDate(acc,e,'year'),{});
+  return {
+    labels:Object.keys(graphData),
+    datasets:[
+      {
+        data:Object.values(graphData),
+        label:'Songs',
+        backgroundColor:Object.values(graphData).map(e => CommonMethods.generateColor()),
+      }
+    ]
+  };
+});
 
-const timeframes = ref([
-  {
-    label:'All Time',
-    value:'All'
-  },
-  {
-    label:'This Year',
-    value:'ytd'
-  },
-  {
-    label:'This Quarter',
-    value:'qtd'
-  },
-  {
-    label:'This Month',
-    value:'Mtd'
-  },
-  {
-    label:'This Week',
-    value:'wtd'
-  },
-  {
-    label:'Today',
-    value:'td'
-  }
-]);
 
-const metalFormulas = ref([
-  {
-    label:'All Distinct',
-    value:'/^$|(?!)/',
-  },
-  {
-    label:'Grouped',
-    value:'/metal/i',
-  },
-  {
-    label:'Grouped+',
-    value:'/metal|core|grind/gi',
-  },
-  // {
-  //   label:'Family Groups',
-  //   value:'/./',
-  // }
-]);
-
-const selectedTimeFrame = ref('qtd');
+const metalFormulas = ref(CommonMethods.Music.MetalFormulas);
 const selectedMetalFormula = ref(metalFormulas.value[0].value);
+const startDate = ref(CommonMethods.firstofWeek());
+const endDate = ref(new Date());
 
 const updateSelectedFormula = (newFormula) => {
   selectedMetalFormula.value = newFormula;
 };
 
-const resetGraphs = () => {
-  init();
+const resetGraphs = (payload) => {
+  if(payload){
+    startDate.value = payload[0];
+    endDate.value = payload[1];
+  }
+  let updateRange = {startDate: startDate.value, endDate: endDate.value};
+  try{
+    store.dispatch('getSongs',updateRange);
+  }catch(err){
+    console.log(err);
+    alert("Error caught!!\n");
+  }
 }
 const init = () => {
-  store.dispatch('getSongs',selectedTimeFrame.value);
+  let payload = {startDate: startDate.value, endDate: endDate.value};
+  try{
+    store.dispatch('getSongs',payload);
+  }catch(err){
+    alert('error caught!');
+    console.log(err);
+  }
 }
 
 const songs = computed(()=>{
@@ -125,7 +112,7 @@ try{
   <v-container>
     <v-row>
       <v-col cols="12" sm="12">
-        <v-select v-model="selectedTimeFrame" :items="timeframes" item-title="label" item-value="value" label="Time Frame" @update:modelValue="resetGraphs"></v-select>
+        <DateSlider @updateValue="resetGraphs" @updateRange="resetGraphs" />
         <v-select v-model="selectedMetalFormula" :items="metalFormulas" item-title="label" item-value="value" label="Metal Formula" @update:modelValue="resetGraphs"></v-select>
       </v-col>
     </v-row>
@@ -171,10 +158,12 @@ try{
       </v-col>
     </v-row>
     <v-row>
-      <v-col cols="12" sm="4">
+      <v-col cols="12" sm="8">
         <v-card>
           <v-card-title class="text-center"></v-card-title>
-          <v-card-text class="text-center"></v-card-text>
+          <v-card-text class="text-center">
+            <Bar :data="yearData" :options="{responsive:true, maintainAspectRatio:false}" />
+          </v-card-text>
           <v-card-actions></v-card-actions>
         </v-card>
       </v-col>
@@ -186,8 +175,6 @@ try{
           </v-card-text>
           <v-card-actions></v-card-actions>
         </v-card>
-      </v-col>
-      <v-col cols="12" sm="4">
         <v-card>
           <v-card-title class="text-center"></v-card-title>
           <v-card-text></v-card-text>
@@ -198,7 +185,7 @@ try{
     <v-row>
       <v-col cols="12" sm="12">
         <v-card>
-          <v-card-title>Songs</v-card-title>
+          <v-card-title>Songs added to library in selected period</v-card-title>
           <v-card-text>
             <SongTable :items="songs" />
           </v-card-text>
